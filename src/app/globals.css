@@ -1,26 +1,184 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  
+  --background: #fff9f5;
+  --foreground: #2d2416;
+  --card: #ffffff;
+  --card-foreground: #2d2416;
+  --primary: #e89b7a;
+  --primary-foreground: #2d2416;
+  --secondary: #f4c89d;
+  --secondary-foreground: #2d2416;
+  --accent: #d4a5a5;
+  --accent-foreground: #2d2416;
+  --muted: #fef3ec;
+  --muted-foreground: #735b47;
+  --border: #ead9ca;
+  --input: #ffffff;
+  --ring: #e89b7a;
+  --success: #b8d4a8;
+  --success-foreground: #2d2416;
+  --warning: #f9d89c;
+  --warning-foreground: #2d2416;
+  --error: #e8a1a1;
+  --error-foreground: #2d2416;
+  --info: #a8c9d4;
+  --info-foreground: #2d2416;
+
+  
+  --radius: 0.75rem;
+  --sidebar-width: 280px;
+  --sidebar-collapsed-width: 80px;
+
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="dark"] {
+  
+  --background: #1a1612;
+  --foreground: #f5ebe1;
+  --card: #27221d;
+  --card-foreground: #f5ebe1;
+  --primary: #d67d5a;
+  --primary-foreground: #f5ebe1;
+  --secondary: #e0a86f;
+  --secondary-foreground: #1a1612;
+  --accent: #c98888;
+  --accent-foreground: #f5ebe1;
+  --muted: #2d2721;
+  --muted-foreground: #b09a88;
+  --border: #42392f;
+  --input: #2d2721;
+  --ring: #d67d5a;
+  --success: #92b87d;
+  --success-foreground: #f5ebe1;
+  --warning: #ddb870;
+  --warning-foreground: #1a1612;
+  --error: #d48282;
+  --error-foreground: #f5ebe1;
+  --info: #7aadc4;
+  --info-foreground: #f5ebe1;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  --font-sans: var(--font-nunito);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-nunito), sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--radius);
 }
