@@ -27,55 +27,10 @@ export function useUserProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load profile on mount
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      loadProfile();
-    } else {
-      setProfile(null);
-      setIsLoading(false);
-    }
-  }, [user, isAuthenticated]);
-
-  /**
-   * Load user profile from Supabase
-   */
-  const loadProfile = async () => {
-    if (!user) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (fetchError) {
-        if (fetchError.code === 'PGRST116') {
-          // Profile doesn't exist, create one
-          await createProfile();
-        } else {
-          console.error("Error loading profile:", fetchError);
-          setError(fetchError.message);
-        }
-      } else {
-        setProfile(data as UserProfile);
-      }
-    } catch (err) {
-      console.error("Error loading profile:", err);
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   /**
    * Create a new profile for the user
    */
-  const createProfile = async () => {
+  const createProfile = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -105,7 +60,52 @@ export function useUserProfile() {
       console.error("Error creating profile:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
     }
-  };
+  }, [user]);
+
+  /**
+   * Load user profile from Supabase
+   */
+  const loadProfile = useCallback(async () => {
+    if (!user) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          // Profile doesn't exist, create one
+          await createProfile();
+        } else {
+          console.error("Error loading profile:", fetchError);
+          setError(fetchError.message);
+        }
+      } else {
+        setProfile(data as UserProfile);
+      }
+    } catch (err) {
+      console.error("Error loading profile:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, createProfile]);
+
+  // Load profile on mount
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadProfile();
+    } else {
+      setProfile(null);
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, user, loadProfile]);
 
   /**
    * Update user profile

@@ -30,6 +30,8 @@ export interface Event {
   venue_address?: string
   district?: string
   city: string
+  latitude?: number
+  longitude?: number
   price_min?: number
   price_max?: number
   price_text?: string
