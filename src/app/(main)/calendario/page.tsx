@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageTitle } from "@/components/ui/page-title";
 import { Badge } from "@/components/ui/badge";
-import { MOCK_EVENTS } from "@/constants/mock-events";
+import { useEvents } from "@/hooks/use-events";
 import Link from "next/link";
 import { EventIcon } from "@/components/ui/event-icon";
 
@@ -17,13 +17,16 @@ const MONTHS = [
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 export default function CalendarioPage() {
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 9, 1)); 
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Fetch dynamic events from the backend
+  const { events } = useEvents({ autoFetch: true });
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  
+
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
@@ -45,20 +48,38 @@ export default function CalendarioPage() {
     return days;
   }, [year, month]);
 
-  
-  const eventsByDate = useMemo(() => {
-    const map = new Map<string, typeof MOCK_EVENTS>();
 
-    MOCK_EVENTS.forEach((event) => {
-      const dateKey = event.date;
-      if (!map.has(dateKey)) {
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, typeof events>();
+
+    events.forEach((event) => {
+      // Parse date from ISO format (YYYY-MM-DDTHH:mm:ss) or similar
+      let dateKey = '';
+      if (event.event_date) {
+        try {
+          const date = new Date(event.event_date);
+          if (!isNaN(date.getTime())) {
+            // Format as YYYY-MM-DD
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            dateKey = `${year}-${month}-${day}`;
+          }
+        } catch {
+          // If parsing fails, try to use raw value
+          dateKey = event.event_date.split('T')[0];
+        }
+      }
+      if (dateKey && !map.has(dateKey)) {
         map.set(dateKey, []);
       }
-      map.get(dateKey)!.push(event);
+      if (dateKey) {
+        map.get(dateKey)!.push(event);
+      }
     });
 
     return map;
-  }, []);
+  }, [events]);
 
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
@@ -274,7 +295,7 @@ export default function CalendarioPage() {
               ) : selectedEvents.length > 0 ? (
                 <div className="space-y-4">
                   {selectedEvents
-                    .sort((a, b) => a.time.localeCompare(b.time))
+                    .sort((a, b) => (a.event_time || '').localeCompare(b.event_time || ''))
                     .map((event) => (
                     <Link key={event.id} href={`/eventos/${event.id}`}>
                       <div className="relative pl-8 pb-4 group">
@@ -285,14 +306,14 @@ export default function CalendarioPage() {
                         <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-primary border-2 border-background shadow-sm"></div>
 
                         {/* Time label */}
-                        <div className="text-xs font-semibold text-primary mb-2">{event.time}</div>
+                        <div className="text-xs font-semibold text-primary mb-2">{event.event_time}</div>
 
                         {/* Event card */}
                         <Card hoverable className="transition-all">
                           <CardContent className="p-3">
                             <div className="flex gap-3">
                               <div className="p-2 rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                                <EventIcon category={event.category} className="w-5 h-5" />
+                                <EventIcon category={event.category || ''} className="w-5 h-5" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <h4 className="font-semibold text-sm mb-1 line-clamp-1 group-hover:text-primary transition-colors">
@@ -303,7 +324,7 @@ export default function CalendarioPage() {
                                     {event.category}
                                   </Badge>
                                   <span className="text-xs font-semibold text-success">
-                                    {event.price}
+                                    {event.price_text || (event.is_free ? 'Gratis' : `S/ ${event.price_min || 0}`)}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
@@ -311,14 +332,14 @@ export default function CalendarioPage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                   </svg>
-                                  <span className="line-clamp-1">{event.location}</span>
+                                  <span className="line-clamp-1">{event.venue_name || event.district || 'Sin ubicación'}</span>
                                 </div>
-                                {event.duration && (
+                                {event.event_time && (
                                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                     </svg>
-                                    <span>{event.duration}</span>
+                                    <span>{event.event_time}</span>
                                   </div>
                                 )}
                               </div>

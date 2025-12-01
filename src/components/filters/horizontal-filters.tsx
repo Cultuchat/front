@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RangeSlider } from "@/components/ui/range-slider";
+import { useCategories } from "@/hooks/use-categories";
 
 type HorizontalFiltersProps = {
   selectedCategory: string;
@@ -22,16 +23,6 @@ type HorizontalFiltersProps = {
   filteredCount: number;
 };
 
-const CATEGORIES = [
-  "Todos",
-  "Música",
-  "Arte",
-  "Teatro",
-  "Danza",
-  "Festivales",
-  "Gastronomía",
-];
-
 export const HorizontalFilters = memo(function HorizontalFilters({
   selectedCategory,
   onCategoryChange,
@@ -48,6 +39,7 @@ export const HorizontalFilters = memo(function HorizontalFilters({
   filteredCount,
 }: HorizontalFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const { categories } = useCategories();
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 mb-6 space-y-4">
@@ -79,7 +71,7 @@ export const HorizontalFilters = memo(function HorizontalFilters({
 
         {}
         <div className="flex items-center gap-2 flex-wrap">
-          {CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <button
               key={category}
               onClick={() => onCategoryChange(category)}

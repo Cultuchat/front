@@ -1,13 +1,15 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageTitle } from "@/components/ui/page-title";
 import { useFavorites } from "@/hooks/use-favorites";
-import { MOCK_EVENTS } from "@/constants/mock-events";
+import { getEvent } from "@/lib/api";
 import { EventIcon } from "@/components/ui/event-icon";
+import type { Event } from "@/types/event";
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -15,9 +17,57 @@ export default function EventDetailPage() {
   const eventId = params.id as string;
   const { toggleFavorite, isFavorite } = useFavorites();
 
-  const event = MOCK_EVENTS.find((e) => e.id === eventId);
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [isAttending, setIsAttending] = useState(false);
 
-  if (!event) {
+  // Formatear fecha para mostrar
+  const formatDate = (dateStr: string | undefined) => {
+    if (!dateStr) return 'Fecha por confirmar';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('es-PE', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Fetch event data from backend
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        setLoading(true);
+        const response = await getEvent(parseInt(eventId));
+        if (response) {
+          setEvent(response);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error("Failed to fetch event"));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvent();
+  }, [eventId]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center">
+        <div className="text-6xl mb-4">⏳</div>
+        <h3 className="text-xl font-bold mb-2">Cargando evento...</h3>
+        <p className="text-muted-foreground">Obteniendo información del evento</p>
+      </div>
+    );
+  }
+
+  if (error || !event) {
     return (
       <div className="flex flex-col h-full items-center justify-center">
         <PageTitle title="Evento no encontrado" description="El evento que buscas no existe" />
@@ -28,7 +78,7 @@ export default function EventDetailPage() {
     );
   }
 
-  const favorite = isFavorite(event.id);
+  const favorite = isFavorite(event.id.toString());
 
   return (
     <div className="flex flex-col h-full overflow-auto">
@@ -46,7 +96,7 @@ export default function EventDetailPage() {
           {}
           <div className="flex items-start gap-6 mb-6">
             <div className="p-6 rounded-2xl bg-primary/10 text-primary">
-              <EventIcon category={event.category} className="w-16 h-16" />
+              <EventIcon category={event.category || ''} className="w-16 h-16" />
             </div>
             <div className="flex-1">
               <div className="flex items-start justify-between gap-4 mb-3">
@@ -95,7 +145,10 @@ export default function EventDetailPage() {
               </svg>
               <div>
                 <p className="text-xs text-muted-foreground font-medium">Fecha</p>
-                <p className="text-sm font-semibold">{event.date}</p>
+                <p className="text-sm font-semibold">{formatDate(event.event_date)}</p>
+                {event.event_time && (
+                  <p className="text-xs text-muted-foreground">{event.event_time}</p>
+                )}
               </div>
             </div>
 
@@ -111,7 +164,10 @@ export default function EventDetailPage() {
               </svg>
               <div>
                 <p className="text-xs text-muted-foreground font-medium">Ubicación</p>
-                <p className="text-sm font-semibold">{event.location}</p>
+                <p className="text-sm font-semibold">{event.venue_name || event.district || 'Sin ubicación'}</p>
+                {event.venue_address && (
+                  <p className="text-xs text-muted-foreground">{event.venue_address}</p>
+                )}
               </div>
             </div>
 
@@ -126,48 +182,56 @@ export default function EventDetailPage() {
               </svg>
               <div>
                 <p className="text-xs text-muted-foreground font-medium">Precio</p>
-                <p className="text-sm font-semibold text-success">{event.price}</p>
+                <p className="text-sm font-semibold text-success">{event.price_text || (event.is_free ? 'Gratis' : `S/ ${event.price_min || 0}`)}</p>
               </div>
             </div>
           </div>
 
-          {}
+          {/* Descripción del evento */}
           <div className="border-t border-border pt-6">
             <h2 className="text-xl font-semibold mb-4">Acerca del evento</h2>
             <p className="text-muted-foreground leading-relaxed mb-6">{event.description}</p>
-
-            <div className="bg-accent/30 p-6 rounded-lg">
-              <h3 className="font-semibold mb-3">Información importante</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Verifica la disponibilidad antes de asistir</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Los horarios están sujetos a cambios</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Llega con anticipación para asegurar tu entrada</span>
-                </li>
-              </ul>
-            </div>
           </div>
 
-          {}
+          {/* Botones de acción */}
           <div className="flex gap-4 mt-8 pt-6 border-t border-border">
-            <Button variant="primary" className="flex-1">
-              Comprar entrada
+            <Button 
+              variant={isAttending ? "primary" : "outline"}
+              className="flex-1"
+              onClick={() => setIsAttending(!isAttending)}
+            >
+              {isAttending ? (
+                <>
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  ¡Asistiré!
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Asistiré
+                </>
+              )}
             </Button>
-            <Button variant="outline" className="flex-1">
-              Compartir evento
+            {event.source_url && (
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => window.open(event.source_url, '_blank')}
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Ver en {event.source_name || 'sitio oficial'}
+              </Button>
+            )}
+            <Button variant="ghost" className="px-4">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
             </Button>
           </div>
         </CardContent>

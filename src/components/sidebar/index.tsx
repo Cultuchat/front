@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { NAV_ITEMS } from "@/constants/navigation";
 import { SidebarHeader } from "./sidebar-header";
 import { NavItem } from "./nav-item";
-import { useAuth } from "@/hooks/use-auth";
 import { useChatHistory } from "@/hooks/use-chat-history";
 import { useRouter, usePathname } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -15,7 +15,7 @@ export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const isInChat = pathname.startsWith("/chat");
-  const { user } = useAuth();
+  const { user, isLoading: isLoaded } = useAuth();
 
   const {
     conversations,
@@ -155,21 +155,32 @@ export function Sidebar() {
             </div>
           )}
 
-          {}
+          {/* User section */}
           <div className="p-4 border-t border-border mt-auto">
-            {}
-            {user && !isCollapsed && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/50">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-semibold text-primary">
-                    {user.name.charAt(0).toUpperCase()}
+            {/* User info */}
+            {!isLoaded && user && !isCollapsed && (
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-accent/50">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="text-sm font-medium">
+                    {user.name?.charAt(0).toUpperCase() || "U"}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{user.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user.isGuest ? "Invitado" : user.email}
+                  <p className="text-xs font-medium truncate">
+                    {user.name || "Usuario"}
                   </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {user.email || "Sin email"}
+                  </p>
+                </div>
+              </div>
+            )}
+            {!isLoaded && user && isCollapsed && (
+              <div className="flex justify-center">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="text-sm font-medium">
+                    {user.name?.charAt(0).toUpperCase() || "U"}
+                  </span>
                 </div>
               </div>
             )}

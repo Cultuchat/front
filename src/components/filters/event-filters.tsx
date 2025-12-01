@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useCategories } from "@/hooks/use-categories";
 
 type EventFiltersProps = {
   selectedCategory: string;
@@ -17,16 +18,6 @@ type EventFiltersProps = {
   onDateChange: (date: string) => void;
 };
 
-const CATEGORIES = [
-  "Todos",
-  "Música",
-  "Arte",
-  "Teatro",
-  "Danza",
-  "Festivales",
-  "Gastronomía",
-];
-
 export const EventFilters = memo(function EventFilters({
   selectedCategory,
   onCategoryChange,
@@ -39,6 +30,8 @@ export const EventFilters = memo(function EventFilters({
   selectedDate,
   onDateChange,
 }: EventFiltersProps) {
+  const { categories } = useCategories();
+
   return (
     <div className="space-y-6">
       {}
@@ -74,7 +67,7 @@ export const EventFilters = memo(function EventFilters({
           Categoría
         </label>
         <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <button
               key={category}
               onClick={() => onCategoryChange(category)}

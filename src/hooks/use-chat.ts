@@ -2,15 +2,13 @@
 
 import { useState, useCallback } from "react";
 import type { Message } from "@/types/chat";
-import { MOCK_EVENTS } from "@/constants/mock-events";
-import { usePreferences } from "./use-preferences";
 
 export function useChat(initialMessages?: Message[]) {
-  const { preferences } = usePreferences();
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const sendMessage = useCallback((content: string) => {
+  const sendMessage = useCallback(async (content: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -20,130 +18,122 @@ export function useChat(initialMessages?: Message[]) {
 
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
+    setError(null);
 
-    
-    setTimeout(() => {
-      const response = generateResponse(content, preferences.categories);
+    try {
+      // Call Supabase Edge Function
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Supabase configuration missing');
+      }
+
+      // Add current date context to help with date-related queries
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth() + 1;
+      
+      // Enhance message with year context if it mentions a month without year
+      let enhancedMessage = content;
+      const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+      const lowerContent = content.toLowerCase();
+      
+      // If message mentions a month but not a year, add current/next year
+      for (const month of months) {
+        if (lowerContent.includes(month) && !lowerContent.match(/20\d{2}/)) {
+          const monthIndex = months.indexOf(month);
+          const yearToUse = monthIndex < currentMonth - 1 ? currentYear + 1 : currentYear;
+          enhancedMessage = content + ` ${yearToUse}`;
+          break;
+        }
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({
+          message: enhancedMessage,
+          current_date: today.toISOString().split('T')[0],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al procesar el mensaje');
+      }
+
+      const data = await response.json();
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         timestamp: new Date(),
-        content: response.content || "",
-        events: response.events,
-        quickActions: response.quickActions,
+        content: data.response,
+        events: data.events,
+        // Extract quick actions from metadata if available
+        quickActions: data.metadata?.quick_actions || generateQuickActions(data.events),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 1000);
-  }, [preferences.categories]);
+    } catch (err) {
+      console.error("Error sending message:", err);
+      setError(err instanceof Error ? err.message : "Error al enviar el mensaje");
 
-  return { messages, isLoading, sendMessage, setMessages };
+      // Add error message to chat
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        timestamp: new Date(),
+        content: "Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo.",
+        quickActions: ["Reintentar", "Ver todos los eventos"],
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { messages, isLoading, sendMessage, setMessages, error };
 }
 
-function generateResponse(userMessage: string, userPreferences: string[] = []): Partial<Message> {
-  const lowerMessage = userMessage.toLowerCase();
-
-  
-  const filterByPreferences = (events: typeof MOCK_EVENTS) => {
-    if (userPreferences.length === 0) return events;
-    return events.filter(e => userPreferences.includes(e.category));
-  };
-
-  if (lowerMessage.includes("fin de semana") || lowerMessage.includes("semana")) {
-    const weekendEvents = MOCK_EVENTS.filter(e =>
-      e.category === "Música" || e.category === "Arte" || e.category === "Teatro"
-    ).slice(0, 6);
-
-    return {
-      content: `Encontré ${weekendEvents.length} eventos para este fin de semana. Hay opciones muy interesantes para disfrutar:`,
-      events: weekendEvents,
-      quickActions: ["Solo eventos gratuitos", "Solo conciertos", "Solo exposiciones"],
-    };
-  }
-
-  if (lowerMessage.includes("gratis") || lowerMessage.includes("gratuito")) {
-    const freeEvents = MOCK_EVENTS.filter(e => e.price === "Gratis");
-
-    return {
-      content: `¡Perfecto! Hay ${freeEvents.length} eventos gratuitos disponibles. Aquí te muestro los más destacados:`,
-      events: freeEvents,
-      quickActions: ["Conciertos gratuitos", "Arte gratuito", "Eventos de esta semana"],
-    };
-  }
-
-  if (lowerMessage.includes("jazz") || lowerMessage.includes("música") || lowerMessage.includes("concierto")) {
-    const musicEvents = MOCK_EVENTS.filter(e => e.category === "Música");
-
-    return {
-      content: `Hay ${musicEvents.length} conciertos disponibles. Te va a encantar la variedad:`,
-      events: musicEvents,
-      quickActions: ["Solo jazz", "Solo gratuitos", "Eventos de esta semana"],
-    };
-  }
-
-  if (lowerMessage.includes("arte") || lowerMessage.includes("exposición")) {
-    const artEvents = MOCK_EVENTS.filter(e => e.category === "Arte");
-
-    return {
-      content: `Encontré ${artEvents.length} exposiciones de arte que podrían interesarte:`,
-      events: artEvents,
-      quickActions: ["Arte moderno", "Solo gratuitos", "Eventos de esta semana"],
-    };
-  }
-
-  if (lowerMessage.includes("teatro")) {
-    const theaterEvents = MOCK_EVENTS.filter(e => e.category === "Teatro");
-
-    return {
-      content: `Hay ${theaterEvents.length} obras de teatro en cartelera. Todas tienen muy buenas críticas:`,
-      events: theaterEvents,
-      quickActions: ["Solo fines de semana", "Solo gratuitos", "Ver todos"],
-    };
-  }
-
-  if (lowerMessage.includes("danza") || lowerMessage.includes("ballet")) {
-    const danceEvents = MOCK_EVENTS.filter(e => e.category === "Danza");
-
-    return {
-      content: `Tengo ${danceEvents.length} eventos de danza para mostrarte:`,
-      events: danceEvents,
-      quickActions: ["Solo ballet", "Solo gratuitos", "Eventos de esta semana"],
-    };
-  }
-
-  if (lowerMessage.includes("festival")) {
-    const festivals = MOCK_EVENTS.filter(e => e.category === "Festivales");
-
-    return {
-      content: `¡Los festivales son geniales! Hay ${festivals.length} festivales programados:`,
-      events: festivals,
-      quickActions: ["Festivales gratuitos", "Festivales de música", "Ver todos"],
-    };
-  }
-
-  
-  if (userPreferences.length > 0) {
-    const preferredEvents = filterByPreferences(MOCK_EVENTS);
-
-    if (preferredEvents.length > 0) {
-      return {
-        content: `Basándome en tus intereses (${userPreferences.join(", ")}), encontré ${preferredEvents.length} eventos que podrían gustarte:`,
-        events: preferredEvents.slice(0, 6),
-        quickActions: userPreferences.map(cat => `Más eventos de ${cat}`),
-      };
-    }
-  }
-
-  return {
-    content: "Tenemos muchos eventos increíbles disponibles. Puedo ayudarte a encontrar el evento perfecto para ti. ¿Qué te interesa?",
-    quickActions: [
+/**
+ * Generate quick action suggestions based on the events returned
+ */
+function generateQuickActions(events: unknown[]): string[] {
+  if (!events || events.length === 0) {
+    return [
       "Eventos de este fin de semana",
       "Eventos gratuitos",
-      "Conciertos de música",
-      "Exposiciones de arte",
-      "Teatro",
-      "Festivales"
-    ],
-  };
+      "Conciertos",
+      "Ver todos los eventos"
+    ];
+  }
+
+  const actions: string[] = [];
+  const typedEvents = events as Array<{ is_free?: boolean; category?: string }>;
+
+  // Check if there are free events
+  const hasFreeEvents = typedEvents.some((e) => e.is_free);
+  if (!hasFreeEvents) {
+    actions.push("Eventos gratuitos");
+  } else {
+    actions.push("Eventos de pago");
+  }
+
+  // Get unique categories
+  const categories = Array.from(new Set(typedEvents.map((e) => e.category).filter(Boolean)));
+  if (categories.length > 0 && categories[0]) {
+    actions.push(`Más de ${categories[0]}`);
+  }
+
+  // Add date-based actions
+  actions.push("Este fin de semana");
+  actions.push("Ver todos los eventos");
+
+  return actions.slice(0, 4); // Limit to 4 quick actions
 }

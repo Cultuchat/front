@@ -157,9 +157,9 @@ export default function HistorialPage() {
                           <CardHeader className="pb-3">
                             <div className="flex items-start justify-between mb-2">
                               <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-                                <EventIcon category={event.category} className="w-6 h-6" />
+                                <EventIcon category={event.category || ''} className="w-6 h-6" />
                               </div>
-                              <Badge variant="primary" className="text-xs">{event.category}</Badge>
+                              <Badge variant="primary" className="text-xs">{event.category || 'Evento'}</Badge>
                             </div>
                             <CardTitle className="text-base line-clamp-2 group-hover:text-primary transition-colors">{event.title}</CardTitle>
                           </CardHeader>

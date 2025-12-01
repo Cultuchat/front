@@ -24,7 +24,7 @@ export function useEventFilters(events: Event[]) {
       if (
         searchQuery &&
         !event.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !event.description.toLowerCase().includes(searchQuery.toLowerCase())
+        !(event.description || '').toLowerCase().includes(searchQuery.toLowerCase())
       ) {
         return false;
       }
@@ -35,7 +35,7 @@ export function useEventFilters(events: Event[]) {
       }
 
       
-      const eventPrice = parseFloat(event.price.replace(/[^0-9.]/g, ""));
+      const eventPrice = parseFloat((event.price || '0').replace(/[^0-9.]/g, ""));
       const min = minPrice ? parseFloat(minPrice) : 0;
       const max = maxPrice ? parseFloat(maxPrice) : Infinity;
 

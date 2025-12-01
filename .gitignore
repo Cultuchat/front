@@ -30,8 +30,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files - NUNCA subir esto
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Excepto .env.example que es seguro
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +45,54 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# supabase
+.supabase/
+supabase/.branches
+supabase/.temp
+
+# Scripts con credenciales hardcodeadas - NO SUBIR
+check-events.js
+check-pgvector.js
+generate-embeddings.js
+insert-events.js
+update-events.js
+update-coordinates.js
+run-migration.js
+apply-migration.js
+setup-embeddings.js
+test-embeddings.js
+test-search-api.js
+
+# Archivos SQL con datos sensibles
+insert_sample_events.sql
+
+# Documentación local - no necesaria en repo
+*.md
+!README.md
+# Excepción: mantener README.md
+
+# Claude Code
+.claude/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temporal
+*.tmp
+*.temp
+
+# Jest
+jest.config.js
+jest.setup.js

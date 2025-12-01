@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageTitle } from "@/components/ui/page-title";
@@ -8,23 +8,28 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { usePreferences, CategoryPreference } from "@/hooks/use-preferences";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useCategories } from "@/hooks/use-categories";
+import { getCategoryIcon, getCategoryDescription } from "@/constants/categories";
 import { useRouter } from "next/navigation";
 
-const CATEGORIES: { name: CategoryPreference; icon: string; description: string }[] = [
-  { name: "Música", icon: "🎵", description: "Conciertos, festivales musicales, recitales" },
-  { name: "Arte", icon: "🎨", description: "Exposiciones, galerías, arte urbano" },
-  { name: "Teatro", icon: "🎭", description: "Obras de teatro, stand-up, performances" },
-  { name: "Danza", icon: "💃", description: "Ballet, danza contemporánea, folklórica" },
-  { name: "Festivales", icon: "🎪", description: "Festivales culturales y temáticos" },
-  { name: "Gastronomía", icon: "🍽️", description: "Ferias gastronómicas, degustaciones" },
-];
-
 export default function PerfilPage() {
-  const { user, logout } = useAuth();
+  const { user, isLoading, logout } = useAuth();
   const { preferences, toggleCategory, updateNotifications } = usePreferences();
   const { permission, requestPermission, sendNotification } = useNotifications();
+  const { categories: apiCategories } = useCategories();
   const router = useRouter();
   const [saved, setSaved] = useState(false);
+
+  // Build category list with icons and descriptions
+  const categories = useMemo(() => {
+    return apiCategories
+      .filter(cat => cat !== "Todos")
+      .map(cat => ({
+        name: cat as CategoryPreference,
+        icon: getCategoryIcon(cat),
+        description: getCategoryDescription(cat)
+      }));
+  }, [apiCategories]);
 
   const handleNotificationToggle = async (enabled: boolean) => {
     if (enabled && permission !== "granted") {
@@ -45,13 +50,26 @@ export default function PerfilPage() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push("/");
+  const handleLogout = async () => {
+    await logout();
+    router.push("/auth/login");
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   if (!user) {
-    return null;
+    router.push("/auth/login");
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
@@ -75,7 +93,7 @@ export default function PerfilPage() {
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto space-y-6">
-          {}
+          {/* User Card */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -88,26 +106,23 @@ export default function PerfilPage() {
             <CardContent>
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-primary">
-                    {user.name.charAt(0).toUpperCase()}
+                  <span className="text-2xl font-medium">
+                    {user.name?.charAt(0).toUpperCase() || "U"}
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold">{user.name}</h3>
+                  <h3 className="text-lg font-semibold">
+                    {user.name || "Usuario"}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    {user.isGuest ? "Usuario Invitado" : user.email}
+                    {user.email || "Sin email"}
                   </p>
-                  {user.isGuest && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Regístrate para guardar tus preferencias permanentemente
-                    </p>
-                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {}
+          {/* Categories Card */}
           <Card>
             <CardHeader>
               <CardTitle>Intereses Culturales</CardTitle>
@@ -117,7 +132,7 @@ export default function PerfilPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {CATEGORIES.map((category) => {
+                {categories.map((category) => {
                   const isSelected = preferences.categories.includes(category.name);
                   return (
                     <button

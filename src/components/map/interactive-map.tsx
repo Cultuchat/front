@@ -25,19 +25,31 @@ type InteractiveMapProps = {
 };
 
 export function InteractiveMap({ events, onEventClick }: InteractiveMapProps) {
-  // Coordenadas ficticias para los eventos (centradas en Lima, Perú)
-  const getEventCoordinates = (): [number, number] => {
-    const baseLatLng: [number, number] = [-12.0464, -77.0428]; // Lima, Perú
-    const offset = 0.03;
-    return [
-      baseLatLng[0] + (Math.random() - 0.5) * offset,
-      baseLatLng[1] + (Math.random() - 0.5) * offset,
-    ];
+  // Filter events with valid coordinates
+  const eventsWithCoordinates = events.filter(
+    (event) => event.latitude && event.longitude
+  );
+
+  // Calculate center point based on events or use Lima as default
+  const getMapCenter = (): [number, number] => {
+    if (eventsWithCoordinates.length === 0) {
+      return [-12.0464, -77.0428]; // Lima, Peru center
+    }
+
+    const avgLat = eventsWithCoordinates.reduce(
+      (sum, event) => sum + (event.latitude || 0), 0
+    ) / eventsWithCoordinates.length;
+
+    const avgLng = eventsWithCoordinates.reduce(
+      (sum, event) => sum + (event.longitude || 0), 0
+    ) / eventsWithCoordinates.length;
+
+    return [avgLat, avgLng];
   };
 
   return (
     <MapContainer
-      center={[-12.0464, -77.0428]}
+      center={getMapCenter()}
       zoom={12}
       className="h-full w-full rounded-lg z-0"
       scrollWheelZoom={true}
@@ -46,15 +58,15 @@ export function InteractiveMap({ events, onEventClick }: InteractiveMapProps) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {events.map((event) => (
+      {eventsWithCoordinates.map((event) => (
         <Marker
           key={event.id}
-          position={getEventCoordinates()}
+          position={[event.latitude!, event.longitude!]}
           icon={icon}
           eventHandlers={{
             click: () => {
               if (onEventClick) {
-                onEventClick(event.id);
+                onEventClick(String(event.id));
               }
             },
           }}
@@ -64,7 +76,7 @@ export function InteractiveMap({ events, onEventClick }: InteractiveMapProps) {
               <div className="p-2 min-w-[200px]">
                 <div className="flex items-start gap-2 mb-2">
                   <div className="text-primary">
-                    <EventIcon category={event.category} className="w-5 h-5" />
+                    <EventIcon category={event.category || ''} className="w-5 h-5" />
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold text-sm mb-1">{event.title}</h4>
