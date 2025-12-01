@@ -1,4 +1,5 @@
 {
-  "comment": "Cron job deshabilitado para plan gratuito",
-  "comment2": "Para habilitarlo, descomenta la sección crons y agrega CRON_SECRET en variables de entorno"
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install"
 }
