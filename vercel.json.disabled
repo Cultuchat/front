@@ -1,0 +1,12 @@
+{
+  "comment": "CRON JOB - Solo funciona en plan PRO de Vercel",
+  "comment2": "Para habilitar: renombra este archivo a vercel.json",
+  "comment3": "Y agrega CRON_SECRET a las variables de entorno",
+  "crons": [
+    {
+      "path": "/api/cron/scrape",
+      "schedule": "0 0 * * *",
+      "comment": "Se ejecuta 1 vez al día a medianoche (00:00)"
+    }
+  ]
+}

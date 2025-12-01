@@ -1,8 +1,4 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/scrape",
-      "schedule": "0 */12 * * *"
-    }
-  ]
+  "comment": "Cron job deshabilitado para plan gratuito",
+  "comment2": "Para habilitarlo, descomenta la sección crons y agrega CRON_SECRET en variables de entorno"
 }
