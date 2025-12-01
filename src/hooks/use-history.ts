@@ -19,15 +19,10 @@ export function useHistory() {
   const [history, setHistory] = useState<HistoryEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load history on mount
-  useEffect(() => {
-    loadHistory();
-  }, [user, isAuthenticated]);
-
   /**
    * Load history from Supabase or localStorage
    */
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     setIsLoading(true);
 
     try {
@@ -77,7 +72,12 @@ export function useHistory() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, isAuthenticated]);
+
+  // Load history on mount
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
   /**
    * Load history from localStorage (fallback)

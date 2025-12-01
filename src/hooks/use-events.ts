@@ -48,7 +48,6 @@ export function useEvents(options: UseEventsOptions = {}): UseEventsReturn {
   const [page, setPage] = useState<number>(initialFilters.page || 1);
   const [pageSize] = useState<number>(initialFilters.page_size || 20);
   const [totalPages, setTotalPages] = useState<number>(0);
-  const [filters, setFilters] = useState<EventFilters>(initialFilters);
   const hasFetched = useRef(false);
 
   const fetchEvents = useCallback(async (newFilters?: EventFilters) => {
@@ -130,10 +129,6 @@ export function useEvents(options: UseEventsOptions = {}): UseEventsReturn {
       setEvents(convertedEvents);
       setTotal(count || 0);
       setTotalPages(Math.ceil((count || 0) / pageSize));
-
-      if (newFilters) {
-        setFilters(currentFilters);
-      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to fetch events"));
       console.error("Error fetching events:", err);
