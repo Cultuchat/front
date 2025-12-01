@@ -113,13 +113,15 @@ export async function POST(request: NextRequest) {
       events: results || [],
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Error en búsqueda:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Error en la búsqueda'
+    const errorDetails = error instanceof Error ? error.toString() : String(error)
 
     return NextResponse.json(
       {
-        error: error.message || 'Error en la búsqueda',
-        details: error.toString()
+        error: errorMessage,
+        details: errorDetails
       },
       { status: 500 }
     )
@@ -156,10 +158,11 @@ export async function GET(request: NextRequest) {
       })
     )
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error en GET /api/search:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Error en la búsqueda'
     return NextResponse.json(
-      { error: error.message || 'Error en la búsqueda' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

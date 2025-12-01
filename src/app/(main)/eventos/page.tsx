@@ -8,7 +8,6 @@ import { EventList } from "@/components/events/event-list";
 import { HorizontalFilters } from "@/components/filters/horizontal-filters";
 import { useEvents } from "@/hooks/use-events";
 import { useSemanticSearch } from "@/hooks/use-semantic-search";
-import { Event } from "@/types/event";
 
 export default function EventosPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -201,7 +200,7 @@ export default function EventosPage() {
                   <div className="flex-1">
                     <h4 className="font-semibold text-foreground mb-1">Resultados de búsqueda inteligente</h4>
                     <p className="text-sm text-muted-foreground">
-                      Encontramos {filteredEvents.length} eventos relacionados con "{searchQuery}" usando IA.
+                      Encontramos {filteredEvents.length} eventos relacionados con &ldquo;{searchQuery}&rdquo; usando IA.
                       Los resultados están ordenados por relevancia semántica.
                     </p>
                   </div>

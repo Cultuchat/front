@@ -78,8 +78,8 @@ export function useSemanticSearch(): UseSemanticSearchReturn {
 
       return data
 
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error desconocido en la búsqueda'
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido en la búsqueda'
       setError(errorMessage)
       setResults(null)
       setCount(0)
