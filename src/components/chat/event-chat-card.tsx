@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,10 +53,13 @@ export function EventChatCard({ event, onViewDetails }: EventChatCardProps) {
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {event.image_url && (
-              <img
+              <Image
                 src={event.image_url}
                 alt={event.title}
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded object-cover flex-shrink-0"
+                unoptimized
               />
             )}
             <h3 className="font-semibold text-sm text-foreground line-clamp-2 flex-1">

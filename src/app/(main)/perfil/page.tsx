@@ -7,16 +7,16 @@ import { PageTitle } from "@/components/ui/page-title";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { usePreferences, CategoryPreference } from "@/hooks/use-preferences";
-import { useNotifications } from "@/hooks/use-notifications";
 import { useCategories } from "@/hooks/use-categories";
+import { useLanguage, Language } from "@/contexts/language-context";
 import { getCategoryIcon, getCategoryDescription } from "@/constants/categories";
 import { useRouter } from "next/navigation";
 
 export default function PerfilPage() {
   const { user, isLoading, logout } = useAuth();
-  const { preferences, toggleCategory, updateNotifications } = usePreferences();
-  const { permission, requestPermission, sendNotification } = useNotifications();
+  const { preferences, toggleCategory } = usePreferences();
   const { categories: apiCategories } = useCategories();
+  const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
   const [saved, setSaved] = useState(false);
 
@@ -30,20 +30,6 @@ export default function PerfilPage() {
         description: getCategoryDescription(cat)
       }));
   }, [apiCategories]);
-
-  const handleNotificationToggle = async (enabled: boolean) => {
-    if (enabled && permission !== "granted") {
-      const granted = await requestPermission();
-      if (granted) {
-        updateNotifications({ notifications: true });
-        sendNotification("¡Notificaciones activadas!", {
-          body: "Recibirás alertas sobre eventos de tu interés",
-        });
-      }
-    } else {
-      updateNotifications({ notifications: enabled });
-    }
-  };
 
   const handleSavePreferences = () => {
     setSaved(true);
@@ -193,86 +179,59 @@ export default function PerfilPage() {
             </CardContent>
           </Card>
 
-          {}
+          {/* Language Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Notificaciones</CardTitle>
+              <CardTitle>{t("profile.language")}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Configura qué tipo de notificaciones deseas recibir
+                {t("profile.languageDescription")}
               </p>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <label className="flex items-center justify-between p-3 rounded-lg hover:bg-accent cursor-pointer">
-                <div className="flex-1">
-                  <h4 className="font-medium">Habilitar notificaciones</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Recibe alertas en tu navegador
-                    {permission === "denied" && (
-                      <span className="text-error"> (Bloqueadas por el navegador)</span>
-                    )}
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={preferences.notifications}
-                  onChange={(e) => handleNotificationToggle(e.target.checked)}
-                  disabled={permission === "denied"}
-                  className="w-5 h-5"
-                />
-              </label>
-
-              {preferences.notifications && (
-                <>
-                  <label className="flex items-center justify-between p-3 rounded-lg hover:bg-accent cursor-pointer">
-                    <div className="flex-1">
-                      <h4 className="font-medium">Nuevos eventos</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Notificar cuando haya eventos de tu interés
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={preferences.notifyNewEvents}
-                      onChange={(e) => updateNotifications({ notifyNewEvents: e.target.checked })}
-                      className="w-5 h-5"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-3 rounded-lg hover:bg-accent cursor-pointer">
-                    <div className="flex-1">
-                      <h4 className="font-medium">Cambios de precio</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Alertas de eventos gratuitos o descuentos
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={preferences.notifyPriceChanges}
-                      onChange={(e) =>
-                        updateNotifications({ notifyPriceChanges: e.target.checked })
-                      }
-                      className="w-5 h-5"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-3 rounded-lg hover:bg-accent cursor-pointer">
-                    <div className="flex-1">
-                      <h4 className="font-medium">Eventos cercanos</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Notificar eventos cerca de tu ubicación
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={preferences.notifyNearbyEvents}
-                      onChange={(e) =>
-                        updateNotifications({ notifyNearbyEvents: e.target.checked })
-                      }
-                      className="w-5 h-5"
-                    />
-                  </label>
-                </>
-              )}
+            <CardContent>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setLanguage("es")}
+                  className={`
+                    flex-1 p-4 rounded-lg border-2 transition-all flex items-center justify-center gap-3
+                    ${language === "es"
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50"
+                    }
+                  `}
+                >
+                  <span className="text-2xl">🇪🇸</span>
+                  <div className="text-left">
+                    <h4 className="font-semibold">Español</h4>
+                    <p className="text-xs text-muted-foreground">Spanish</p>
+                  </div>
+                  {language === "es" && (
+                    <svg className="w-5 h-5 text-primary ml-auto" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={() => setLanguage("en")}
+                  className={`
+                    flex-1 p-4 rounded-lg border-2 transition-all flex items-center justify-center gap-3
+                    ${language === "en"
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50"
+                    }
+                  `}
+                >
+                  <span className="text-2xl">🇺🇸</span>
+                  <div className="text-left">
+                    <h4 className="font-semibold">English</h4>
+                    <p className="text-xs text-muted-foreground">Inglés</p>
+                  </div>
+                  {language === "en" && (
+                    <svg className="w-5 h-5 text-primary ml-auto" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </CardContent>
           </Card>
 

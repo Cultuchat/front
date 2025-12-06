@@ -182,3 +182,11 @@ body {
   outline-offset: 2px;
   border-radius: var(--radius);
 }
+
+/* Remove focus ring for chat input */
+.no-focus-ring:focus,
+.no-focus-ring:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  ring: none !important;
+}

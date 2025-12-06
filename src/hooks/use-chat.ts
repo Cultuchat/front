@@ -9,7 +9,7 @@ export function useChat(initialMessages?: Message[]) {
   const [isSearchingWeb, setIsSearchingWeb] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const sendMessage = useCallback(async (content: string, forceTavily = false) => {
+  const sendMessage = useCallback(async (content: string, forceWebSearch = false) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -19,7 +19,7 @@ export function useChat(initialMessages?: Message[]) {
 
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
-    if (forceTavily) {
+    if (forceWebSearch) {
       setIsSearchingWeb(true);
     }
     setError(null);
@@ -63,7 +63,7 @@ export function useChat(initialMessages?: Message[]) {
         body: JSON.stringify({
           message: enhancedMessage,
           current_date: today.toISOString().split('T')[0],
-          forceTavily,
+          forceWebSearch,
         }),
       });
 
@@ -80,7 +80,7 @@ export function useChat(initialMessages?: Message[]) {
         content: data.response,
         events: data.events,
         // Extract quick actions from metadata if available
-        quickActions: data.metadata?.quick_actions || generateQuickActions(data.events),
+        quickActions: data.metadata?.quick_actions,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -94,7 +94,6 @@ export function useChat(initialMessages?: Message[]) {
         role: "assistant",
         timestamp: new Date(),
         content: "Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo.",
-        quickActions: ["Reintentar", "Ver todos los eventos"],
       };
 
       setMessages((prev) => [...prev, errorMessage]);
@@ -107,39 +106,3 @@ export function useChat(initialMessages?: Message[]) {
   return { messages, isLoading, isSearchingWeb, sendMessage, setMessages, error };
 }
 
-/**
- * Generate quick action suggestions based on the events returned
- */
-function generateQuickActions(events: unknown[]): string[] {
-  if (!events || events.length === 0) {
-    return [
-      "Eventos de este fin de semana",
-      "Eventos gratuitos",
-      "Conciertos",
-      "Ver todos los eventos"
-    ];
-  }
-
-  const actions: string[] = [];
-  const typedEvents = events as Array<{ is_free?: boolean; category?: string }>;
-
-  // Check if there are free events
-  const hasFreeEvents = typedEvents.some((e) => e.is_free);
-  if (!hasFreeEvents) {
-    actions.push("Eventos gratuitos");
-  } else {
-    actions.push("Eventos de pago");
-  }
-
-  // Get unique categories
-  const categories = Array.from(new Set(typedEvents.map((e) => e.category).filter(Boolean)));
-  if (categories.length > 0 && categories[0]) {
-    actions.push(`Más de ${categories[0]}`);
-  }
-
-  // Add date-based actions
-  actions.push("Este fin de semana");
-  actions.push("Ver todos los eventos");
-
-  return actions.slice(0, 4); // Limit to 4 quick actions
-}
