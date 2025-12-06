@@ -1,114 +1,0 @@
-═══════════════════════════════════════════════════════════
-🚀 COMANDOS PARA SUBIR A GITHUB - CULTUCHAT
-═══════════════════════════════════════════════════════════
-
-✅ PREPARACIÓN COMPLETADA:
-- .gitignore configurado para proteger archivos sensibles
-- .env.example creado (sin credenciales)
-- Archivos sensibles ignorados automáticamente
-
-═══════════════════════════════════════════════════════════
-📋 PASOS A SEGUIR:
-═══════════════════════════════════════════════════════════
-
-PASO 1: Agregar todos los cambios
-──────────────────────────────────
-git add .
-
-
-PASO 2: Hacer commit
-──────────────────────────────────
-git commit -m "feat: CultuChat - Plataforma de eventos culturales con IA
-
-- Sistema de chatbot inteligente
-- Búsqueda semántica con embeddings de OpenAI
-- 7 páginas completamente funcionales
-- Integración con Supabase
-- Mapa interactivo de eventos
-- Sistema de favoritos y historial"
-
-
-PASO 3: Subir a GitHub
-──────────────────────────────────
-git push
-
-
-═══════════════════════════════════════════════════════════
-⚠️  ARCHIVOS QUE NO SE SUBIRÁN (PROTEGIDOS):
-═══════════════════════════════════════════════════════════
-
-🔒 Credenciales:
-✅ .env (con tus API keys)
-
-🔒 Scripts con credenciales:
-✅ check-events.js
-✅ check-pgvector.js
-✅ generate-embeddings.js
-✅ insert-events.js
-✅ update-events.js
-✅ update-coordinates.js
-✅ setup-embeddings.js
-✅ test-embeddings.js
-✅ apply-migration.js
-✅ run-migration.js
-
-🔒 Documentación local:
-✅ EMBEDDINGS_READY.md
-✅ EMBEDDINGS_SETUP.md
-✅ FRONTEND_ANALYSIS.md
-✅ FRONTEND_FIXES.md
-✅ GITHUB_SETUP.md
-✅ IMPROVEMENTS.md
-✅ QUICK_START_EMBEDDINGS.md
-✅ insert_sample_events.sql
-
-🔒 Otros:
-✅ node_modules/
-✅ .next/
-✅ .supabase/
-✅ .claude/
-
-
-═══════════════════════════════════════════════════════════
-✅ ARCHIVOS QUE SÍ SE SUBIRÁN:
-═══════════════════════════════════════════════════════════
-
-✅ Todo el código fuente (src/)
-✅ Configuración (package.json, tsconfig.json, etc.)
-✅ Migraciones de Supabase (supabase/migrations/*.sql)
-✅ README.md
-✅ .env.example (sin credenciales)
-✅ .gitignore
-
-
-═══════════════════════════════════════════════════════════
-🔐 DESPUÉS DE SUBIR A GITHUB:
-═══════════════════════════════════════════════════════════
-
-Si vas a desplegar en Vercel/Netlify/etc:
-1. Agregar variables de entorno manualmente en el dashboard
-2. Usar .env.example como referencia
-3. NUNCA incluir credenciales reales en el código
-
-
-═══════════════════════════════════════════════════════════
-📝 VERIFICACIÓN FINAL:
-═══════════════════════════════════════════════════════════
-
-Antes de hacer push, verifica:
-□ git status no muestra archivos .env
-□ No hay credenciales en el código
-□ .gitignore está actualizado
-
-Ejecuta:
-git status
-
-Y confirma que NO aparecen archivos sensibles.
-
-
-═══════════════════════════════════════════════════════════
-🎉 ¡LISTO!
-═══════════════════════════════════════════════════════════
-
-Tus credenciales están protegidas.
-Puedes hacer push con seguridad.

@@ -163,6 +163,45 @@ async function findSimilarEvents(
   return data || [];
 }
 
+// Detect category from query
+function detectCategory(query: string): string | null {
+  const lowerQuery = query.toLowerCase();
+
+  // Category keywords mapping
+  const categoryKeywords: { [key: string]: string[] } = {
+    'Arte & Cultura': ['arte', 'exposición', 'exposiciones', 'galería', 'museo', 'pintura', 'escultura'],
+    'Concierto': ['concierto', 'conciertos', 'música', 'musical', 'show musical', 'recital'],
+    'Teatro': ['teatro', 'obra', 'obras de teatro', 'comedia', 'drama', 'monólogo'],
+    'Ballet': ['ballet', 'danza', 'baile clásico'],
+    'Infantil': ['infantil', 'niños', 'familia', 'kids'],
+    'Festival': ['festival', 'festivales'],
+    'Deportes': ['deporte', 'deportes', 'fútbol', 'basketball', 'partido'],
+  };
+
+  // Check each category
+  for (const [category, keywords] of Object.entries(categoryKeywords)) {
+    for (const keyword of keywords) {
+      if (lowerQuery.includes(keyword)) {
+        return category;
+      }
+    }
+  }
+
+  return null;
+}
+
+// Filter events by detected category
+function filterEventsByCategory(events: EventMatch[], category: string | null): EventMatch[] {
+  if (!category) return events;
+
+  const filtered = events.filter(e =>
+    e.category && e.category.toLowerCase().includes(category.toLowerCase())
+  );
+
+  // If filtering results in no events, return original results
+  return filtered.length > 0 ? filtered : events;
+}
+
 // Check if results are good enough
 function areResultsGood(events: EventMatch[]): boolean {
   if (events.length === 0) return false;
@@ -389,13 +428,27 @@ Tu rol es ayudar a los usuarios a encontrar eventos interesantes.
 
 Si el usuario menciona un mes sin año, asume que se refiere a ${currentYear} o ${currentYear + 1} dependiendo de cuál esté más cerca.
 
-IMPORTANTE: Si se encontraron eventos (hay datos en la lista de eventos), SIEMPRE preséntales al usuario.
-NUNCA digas "no encontré eventos" si la lista de eventos tiene datos.
+REGLAS CRÍTICAS:
+1. SIEMPRE menciona el número EXACTO de eventos que aparecen en la lista de "Eventos encontrados" más abajo.
+2. NO cuentes solo los eventos que creas relevantes. Cuenta TODOS los eventos en la lista.
+3. Genera SOLO un mensaje breve y amigable (1-2 líneas) mencionando cuántos eventos hay en total.
+4. NO listes los eventos en tu respuesta, NO incluyas detalles como fechas, lugares, precios, etc.
+5. Los eventos se mostrarán en tarjetas visuales debajo de tu mensaje.
+6. Si NO hay eventos (lista vacía), genera un mensaje amigable sugiriendo alternativas o pidiendo más detalles.
+
+Ejemplo de respuesta correcta cuando hay 5 eventos en la lista:
+"¡Perfecto! Encontré 5 eventos que podrían interesarte. Aquí están:"
+
+Ejemplo de respuesta correcta cuando hay 10 eventos en la lista:
+"¡Excelente! Encontré 10 eventos culturales para ti. Échales un vistazo:"
+
+Ejemplo de respuesta INCORRECTA (NO HACER):
+"Encontré estos eventos:
+1. La Granja de Zenón - 7 de diciembre...
+2. Anuel AA - 7 de diciembre..."
 
 Responde de forma natural y conversacional en español.
-Incluye emojis para hacer la respuesta más atractiva.
-Si hay eventos disponibles, preséntalos de forma clara y concisa.
-Si NO hay eventos (lista vacía), sugiere alternativas o pide más detalles.`;
+Incluye emojis para hacer la respuesta más atractiva.`;
 
   if (usedTavily && tavilyStats) {
     systemPrompt += `\n\nNOTA: También busqué en la web y encontré ${tavilyStats.newEventsFound} nuevos eventos que agregué a la base de datos. Estos eventos ahora están disponibles para futuras búsquedas.`;
@@ -496,24 +549,28 @@ Deno.serve(async (req) => {
         console.log(`[Strategy] Trying vector search...`);
 
         const queryEmbedding = await generateEmbedding(message);
-        events = await findSimilarEvents(supabase, queryEmbedding, 10, 0.2);
+        let allEvents = await findSimilarEvents(supabase, queryEmbedding, 10, 0.2);
 
-        console.log(`[Vector DB] Found ${events.length} events`);
+        console.log(`[Vector DB] Found ${allEvents.length} events`);
+
+        // STEP 2.5: Detect and filter by category if applicable
+        const detectedCategory = detectCategory(message);
+        if (detectedCategory) {
+          console.log(`[Category] Detected category: ${detectedCategory}`);
+          events = filterEventsByCategory(allEvents, detectedCategory);
+          console.log(`[Category] After filtering: ${events.length} events`);
+        } else {
+          events = allEvents;
+        }
 
         if (events.length > 0) {
           const avgSimilarity = events.reduce((sum, e) => sum + e.similarity, 0) / events.length;
           console.log(`[Vector DB] Average similarity: ${(avgSimilarity * 100).toFixed(1)}%`);
         }
 
-        // STEP 3: Check if results are good enough
-        const resultsAreGood = areResultsGood(events);
-
-        if (!resultsAreGood || forceTavily) {
-          if (forceTavily) {
-            console.log(`[Decision] User forced Tavily search...`);
-          } else {
-            console.log(`[Decision] Vector results not good enough, trying Tavily...`);
-          }
+        // STEP 3: Use Tavily ONLY if user explicitly requested it
+        if (forceTavily) {
+          console.log(`[Decision] User requested web search with Tavily...`);
 
           // STEP 4: Use Tavily to find new events
           tavilyStats = await searchAndProcessWithTavily(message, supabase);
@@ -528,11 +585,19 @@ Deno.serve(async (req) => {
 
             // STEP 6: Search again in vector DB (now with new events)
             const newQueryEmbedding = await generateEmbedding(message);
-            events = await findSimilarEvents(supabase, newQueryEmbedding, 10, 0.2);
-            console.log(`[Vector DB] Re-searched: Found ${events.length} events (including new ones)`);
+            let newAllEvents = await findSimilarEvents(supabase, newQueryEmbedding, 10, 0.2);
+            console.log(`[Vector DB] Re-searched: Found ${newAllEvents.length} events (including new ones)`);
+
+            // Apply category filter again if detected
+            if (detectedCategory) {
+              events = filterEventsByCategory(newAllEvents, detectedCategory);
+              console.log(`[Category] After re-filtering: ${events.length} events`);
+            } else {
+              events = newAllEvents;
+            }
           }
         } else {
-          console.log(`[Decision] Vector results are good (${events.length} events with good similarity)`);
+          console.log(`[Decision] Using vector search results (${events.length} events found)`);
         }
 
         // Generate response

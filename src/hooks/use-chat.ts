@@ -6,9 +6,10 @@ import type { Message } from "@/types/chat";
 export function useChat(initialMessages?: Message[]) {
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearchingWeb, setIsSearchingWeb] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, forceTavily = false) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -18,6 +19,9 @@ export function useChat(initialMessages?: Message[]) {
 
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
+    if (forceTavily) {
+      setIsSearchingWeb(true);
+    }
     setError(null);
 
     try {
@@ -59,6 +63,7 @@ export function useChat(initialMessages?: Message[]) {
         body: JSON.stringify({
           message: enhancedMessage,
           current_date: today.toISOString().split('T')[0],
+          forceTavily,
         }),
       });
 
@@ -95,10 +100,11 @@ export function useChat(initialMessages?: Message[]) {
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      setIsSearchingWeb(false);
     }
   }, []);
 
-  return { messages, isLoading, sendMessage, setMessages, error };
+  return { messages, isLoading, isSearchingWeb, sendMessage, setMessages, error };
 }
 
 /**

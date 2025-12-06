@@ -15,7 +15,7 @@ export default function ChatConversationPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef<string | null>(null);
 
-  const { messages, isLoading, sendMessage, setMessages } = useChat();
+  const { messages, isLoading, isSearchingWeb, sendMessage, setMessages } = useChat();
   const { getCurrentConversation, updateConversation, switchConversation } = useChatHistory();
 
   
@@ -70,11 +70,23 @@ export default function ChatConversationPage() {
             {isLoading && (
               <div className="flex justify-start mb-4">
                 <div className="bg-card border border-border rounded-2xl px-4 py-3 shadow-sm">
-                  <div className="flex gap-2">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-75" />
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-150" />
-                  </div>
+                  {isSearchingWeb ? (
+                    <div className="flex items-center gap-3">
+                      <svg className="w-5 h-5 text-primary animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                      </svg>
+                      <div>
+                        <p className="text-sm font-medium">Buscando eventos nuevos en la web...</p>
+                        <p className="text-xs text-muted-foreground">Esto puede tomar unos segundos</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-75" />
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-150" />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -83,7 +95,7 @@ export default function ChatConversationPage() {
 
           {}
           <div className="flex-shrink-0 border-t border-border pt-4">
-            <ChatInput onSend={sendMessage} disabled={isLoading} />
+            <ChatInput onSend={sendMessage} disabled={isLoading} isSearchingWeb={isSearchingWeb} />
           </div>
         </CardContent>
       </Card>

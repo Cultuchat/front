@@ -9,12 +9,6 @@ export type Message = {
   quickActions?: string[];
 };
 
-export type SuggestedQuestion = {
-  id: string;
-  question: string;
-  category: string;
-};
-
 export type ChatConversation = {
   id: string;
   title: string;
