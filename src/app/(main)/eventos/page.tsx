@@ -40,8 +40,13 @@ export default function EventosPage() {
       if (maxPrice !== undefined && eventPrice > maxPrice) return false;
     }
 
-    // Date filter
-    if (selectedDate && event.event_date !== selectedDate) {
+    // Date filter - compare only the date part (YYYY-MM-DD)
+    if (selectedDate && event.event_date) {
+      const eventDatePart = event.event_date.split('T')[0];
+      if (eventDatePart !== selectedDate) {
+        return false;
+      }
+    } else if (selectedDate && !event.event_date) {
       return false;
     }
 

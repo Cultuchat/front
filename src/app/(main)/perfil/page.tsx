@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageTitle } from "@/components/ui/page-title";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { usePreferences, CategoryPreference } from "@/hooks/use-preferences";
 import { useCategories } from "@/hooks/use-categories";
-import { useLanguage, Language } from "@/contexts/language-context";
+import { useLanguage } from "@/contexts/language-context";
 import { getCategoryIcon, getCategoryDescription } from "@/constants/categories";
 import { useRouter } from "next/navigation";
 
@@ -19,6 +19,13 @@ export default function PerfilPage() {
   const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
   const [saved, setSaved] = useState(false);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/auth/login");
+    }
+  }, [user, isLoading, router]);
 
   // Build category list with icons and descriptions
   const categories = useMemo(() => {
@@ -41,16 +48,7 @@ export default function PerfilPage() {
     router.push("/auth/login");
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    router.push("/auth/login");
+  if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

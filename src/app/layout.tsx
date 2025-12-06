@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FavoritesProvider } from "@/contexts/favorites-context";
 import { LanguageProvider } from "@/contexts/language-context";
+import { EventsProvider } from "@/contexts/events-context";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -26,9 +27,11 @@ export default function RootLayout({
       <body className={`${nunito.variable} antialiased`}>
         <ThemeProvider>
           <LanguageProvider>
-            <FavoritesProvider>
-              {children}
-            </FavoritesProvider>
+            <EventsProvider>
+              <FavoritesProvider>
+                {children}
+              </FavoritesProvider>
+            </EventsProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

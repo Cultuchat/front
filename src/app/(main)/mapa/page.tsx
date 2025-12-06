@@ -178,14 +178,6 @@ export default function MapaPage() {
                 </Badge>
               )}
             </div>
-            {userLocation && (
-              <button 
-                onClick={() => setUserLocation(null)}
-                className="text-xs text-muted-foreground hover:text-foreground mt-1"
-              >
-                Ver todos →
-              </button>
-            )}
           </div>
 
           {/* Lista scrolleable */}
@@ -205,46 +197,50 @@ export default function MapaPage() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-border">
+              <div className="p-4 space-y-3">
                 {displayEvents.map((event) => {
                   const isSelected = String(event.id) === selectedEvent;
+                  const price = event.is_free || event.price_min === 0 
+                    ? 'GRATIS' 
+                    : event.price_text || (event.price_min 
+                        ? `S/ ${event.price_min}${event.price_max && event.price_max !== event.price_min ? ` - S/ ${event.price_max}` : ''}`
+                        : 'GRATIS');
                   
                   return (
                     <div
                       key={event.id}
                       onClick={() => setSelectedEvent(String(event.id))}
-                      className={`p-4 cursor-pointer transition-colors ${
+                      className={`p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
                         isSelected 
-                          ? 'bg-primary/10 border-l-2 border-l-primary' 
-                          : 'hover:bg-muted/50'
+                          ? 'border-primary bg-primary/5 shadow-md' 
+                          : 'border-border bg-card hover:border-primary/30 hover:shadow-sm'
                       }`}
                     >
-                      {/* Contenido del evento */}
-                      <div className="flex gap-3">
+                      <div className="flex gap-4">
                         {/* Icono */}
-                        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
-                          isSelected ? 'bg-primary/20' : 'bg-muted'
+                        <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
+                          isSelected ? 'bg-primary/20 text-primary' : 'bg-primary/10 text-primary'
                         }`}>
                           <EventIcon 
                             category={event.category || ''} 
-                            className={`w-5 h-5 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} 
+                            className="w-6 h-6" 
                           />
                         </div>
                         
                         {/* Info */}
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 space-y-2">
                           {/* Título */}
-                          <h3 className="font-medium text-sm text-foreground line-clamp-1 mb-1">
+                          <h3 className="font-semibold text-sm text-foreground line-clamp-2 leading-snug">
                             {event.title}
                           </h3>
                           
                           {/* Badges */}
                           <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="primary" className="text-xs">
+                            <Badge variant="primary" className="text-xs px-2 py-0.5">
                               {event.category}
                             </Badge>
-                            <span className="text-xs font-semibold text-success">
-                              {event.is_free ? 'GRATIS' : event.price_text || `S/${event.price_min || 0}`}
+                            <span className={`text-xs font-semibold ${price === 'GRATIS' ? 'text-green-600 dark:text-green-400' : 'text-primary'}`}>
+                              {price}
                             </span>
                             {event.distance !== undefined && (
                               <span className="text-xs text-muted-foreground">
@@ -256,22 +252,26 @@ export default function MapaPage() {
                           </div>
                           
                           {/* Ubicación */}
-                          <p className="text-xs text-muted-foreground mt-1.5 truncate">
-                            📍 {event.venue_name || event.district || 'Sin ubicación'}
-                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span className="line-clamp-1">{event.venue_name || event.district || 'Sin ubicación'}</span>
+                          </div>
                         </div>
                       </div>
                       
-                      {/* Link a detalles */}
+                      {/* Link a detalles cuando está seleccionado */}
                       {isSelected && (
                         <Link 
                           href={`/eventos/${event.id}`}
-                          className="mt-3 flex items-center justify-center gap-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary rounded-lg py-2 transition-colors"
+                          className="mt-4 flex items-center justify-center gap-2 text-sm bg-primary text-primary-foreground rounded-lg py-2.5 font-medium hover:bg-primary/90 transition-colors"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          Ver detalles completos
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          Ver detalles
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                           </svg>
                         </Link>
                       )}

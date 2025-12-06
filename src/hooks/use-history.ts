@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Event } from "@/types/event";
 import { useAuth } from "./use-auth";
 
 const STORAGE_KEY = "cultuchat_history";
+
+// Cache global para historial - persiste entre renders
+let globalHistoryCache: HistoryEvent[] | null = null;
 
 export type HistoryEvent = Event & {
   visitedAt: Date;
@@ -16,14 +19,46 @@ export type HistoryEvent = Event & {
 
 export function useHistory() {
   const { user, isAuthenticated } = useAuth();
-  const [history, setHistory] = useState<HistoryEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [history, setHistory] = useState<HistoryEvent[]>(globalHistoryCache || []);
+  // Solo mostrar loading si no hay cache
+  const [isLoading, setIsLoading] = useState(globalHistoryCache === null);
+  const hasInitialized = useRef(globalHistoryCache !== null);
+  const isFetching = useRef(false);
+
+  /**
+   * Load history from localStorage (fallback)
+   */
+  const loadFromLocalStorage = useCallback(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        const historyData = parsed.map((item: Omit<HistoryEvent, 'visitedAt'> & { visitedAt: string }) => ({
+          ...item,
+          visitedAt: new Date(item.visitedAt),
+        }));
+        setHistory(historyData);
+        globalHistoryCache = historyData;
+      } catch (error) {
+        console.error("Error loading history from localStorage:", error);
+      }
+    }
+    hasInitialized.current = true;
+    setIsLoading(false);
+  }, []);
 
   /**
    * Load history from Supabase or localStorage
    */
   const loadHistory = useCallback(async () => {
-    setIsLoading(true);
+    // Evitar múltiples fetches simultáneos
+    if (isFetching.current) return;
+    isFetching.current = true;
+
+    // Solo mostrar loading si no tenemos datos
+    if (history.length === 0) {
+      setIsLoading(true);
+    }
 
     try {
       if (isAuthenticated && user) {
@@ -58,6 +93,7 @@ export function useHistory() {
               rating: hist.rating || undefined
             } as HistoryEvent));
           setHistory(events);
+          globalHistoryCache = events;
 
           // Migrate localStorage history to Supabase
           await migrateLocalStorageToSupabase();
@@ -70,35 +106,19 @@ export function useHistory() {
       console.error("Error loading history:", error);
       loadFromLocalStorage();
     } finally {
+      hasInitialized.current = true;
       setIsLoading(false);
+      isFetching.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, history.length, loadFromLocalStorage]);
 
-  // Load history on mount
+  // Load history on mount solo si no está inicializado
   useEffect(() => {
-    loadHistory();
-  }, [loadHistory]);
-
-  /**
-   * Load history from localStorage (fallback)
-   */
-  const loadFromLocalStorage = () => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setHistory(
-          parsed.map((item: Omit<HistoryEvent, 'visitedAt'> & { visitedAt: string }) => ({
-            ...item,
-            visitedAt: new Date(item.visitedAt),
-          }))
-        );
-      } catch (error) {
-        console.error("Error loading history from localStorage:", error);
-      }
+    if (!hasInitialized.current || (user && globalHistoryCache === null)) {
+      loadHistory();
     }
-  };
+  }, [loadHistory, user]);
 
   /**
    * Migrate localStorage history to Supabase
@@ -141,6 +161,20 @@ export function useHistory() {
    * Add event to history
    */
   const addToHistory = useCallback(async (event: Event, interested: boolean = false) => {
+    const updateLocalState = (prev: HistoryEvent[]) => {
+      const filtered = prev.filter((e) => e.id.toString() !== event.id.toString());
+      const updated = [
+        {
+          ...event,
+          visitedAt: new Date(),
+          interested,
+        },
+        ...filtered,
+      ];
+      globalHistoryCache = updated;
+      return updated;
+    };
+
     if (isAuthenticated && user) {
       // Add to Supabase
       try {
@@ -161,32 +195,14 @@ export function useHistory() {
         }
 
         // Update local state
-        setHistory((prev) => {
-          const filtered = prev.filter((e) => e.id.toString() !== event.id.toString());
-          return [
-            {
-              ...event,
-              visitedAt: new Date(),
-              interested,
-            },
-            ...filtered,
-          ];
-        });
+        setHistory(updateLocalState);
       } catch (error) {
         console.error("Error adding to history:", error);
       }
     } else {
       // Add to localStorage
       setHistory((prev) => {
-        const filtered = prev.filter((e) => e.id.toString() !== event.id.toString());
-        const updated = [
-          {
-            ...event,
-            visitedAt: new Date(),
-            interested,
-          },
-          ...filtered,
-        ];
+        const updated = updateLocalState(prev);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
         return updated;
       });
@@ -197,6 +213,14 @@ export function useHistory() {
    * Mark event as interested
    */
   const markAsInterested = useCallback(async (eventId: string | number) => {
+    const updateState = (prev: HistoryEvent[]) => {
+      const updated = prev.map((e) =>
+        e.id.toString() === eventId.toString() ? { ...e, interested: true } : e
+      );
+      globalHistoryCache = updated;
+      return updated;
+    };
+
     if (isAuthenticated && user) {
       // Update in Supabase
       try {
@@ -212,20 +236,14 @@ export function useHistory() {
         }
 
         // Update local state
-        setHistory((prev) =>
-          prev.map((e) =>
-            e.id.toString() === eventId.toString() ? { ...e, interested: true } : e
-          )
-        );
+        setHistory(updateState);
       } catch (error) {
         console.error("Error marking as interested:", error);
       }
     } else {
       // Update in localStorage
       setHistory((prev) => {
-        const updated = prev.map((e) =>
-          e.id.toString() === eventId.toString() ? { ...e, interested: true } : e
-        );
+        const updated = updateState(prev);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
         return updated;
       });
@@ -250,12 +268,14 @@ export function useHistory() {
         }
 
         setHistory([]);
+        globalHistoryCache = [];
       } catch (error) {
         console.error("Error clearing history:", error);
       }
     } else {
       // Clear localStorage
       setHistory([]);
+      globalHistoryCache = [];
       localStorage.removeItem(STORAGE_KEY);
     }
   }, [user, isAuthenticated]);

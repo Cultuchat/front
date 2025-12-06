@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageTitle } from "@/components/ui/page-title";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 export default function CalendarioPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
   // Fetch dynamic events from the backend
   const { events } = useEvents({ autoFetch: true });
@@ -141,7 +141,7 @@ export default function CalendarioPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 mb-4">
         <PageTitle
           icon={
             <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,212 +158,175 @@ export default function CalendarioPage() {
         />
       </div>
 
-      <div className="flex-1 overflow-hidden flex flex-col lg:flex-row gap-6">
-        {}
-        <div className="flex-1 min-h-0">
-          <Card className="h-full flex flex-col">
-            <CardHeader className="flex-shrink-0">
-              <div className="flex items-center justify-between mb-2">
-                <CardTitle className="text-xl md:text-2xl">
+      {/* En móvil: scroll vertical. En desktop: layout horizontal */}
+      <div className="flex-1 overflow-y-auto lg:overflow-hidden">
+        <div className="flex flex-col lg:flex-row gap-6 min-h-0 lg:h-full">
+          {/* Calendario */}
+          <div className="lg:flex-1 flex-shrink-0">
+            <Card className="lg:h-full flex flex-col">
+              {/* Header del calendario */}
+              <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
+                <h2 className="text-xl font-bold text-foreground">
                   {MONTHS[month]} {year}
-                </CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={goToPreviousMonth}
+                    className="h-9 w-9 p-0 flex items-center justify-center text-lg"
+                  >
+                    ‹
                   </Button>
-                  <Button variant="outline" size="sm" onClick={goToToday}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={goToToday}
+                    className="h-9 px-4 font-medium"
+                  >
                     Hoy
                   </Button>
-                  <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={goToNextMonth}
+                    className="h-9 w-9 p-0 flex items-center justify-center text-lg"
+                  >
+                    ›
                   </Button>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto">
-              {}
-              <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
-                {DAYS.map((day) => (
-                  <div
-                    key={day}
-                    className="text-center text-xs sm:text-sm font-semibold text-muted-foreground py-1 sm:py-2"
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
 
-              {}
-              <div className="grid grid-cols-7 gap-1 sm:gap-2">
-                {calendarDays.map((date, index) => {
-                  if (!date) {
-                    return <div key={`empty-${index}`} className="aspect-square" />;
-                  }
-
-                  const dateKey = formatDateKey(date);
-                  const events = eventsByDate.get(dateKey) || [];
-                  const hasEvents = events.length > 0;
-                  const today = isToday(date);
-                  const selected = isSameDay(date, selectedDate);
-
-                  return (
-                    <button
-                      key={dateKey}
-                      onClick={() => handleDayClick(date)}
-                      className={`
-                        aspect-square border rounded-lg p-1 sm:p-2 transition-all relative text-xs sm:text-sm
-                        ${today ? "border-primary bg-primary/5 font-bold" : "border-border"}
-                        ${selected ? "ring-2 ring-primary bg-primary/10" : ""}
-                        ${hasEvents ? "hover:shadow-md cursor-pointer hover:border-primary" : ""}
-                      `}
+              {/* Grid del calendario */}
+              <div className="p-4 flex-1 flex flex-col">
+                {/* Días de la semana */}
+                <div className="grid grid-cols-7 mb-2 flex-shrink-0">
+                  {DAYS.map((day) => (
+                    <div
+                      key={day}
+                      className="text-center text-xs font-semibold text-muted-foreground py-2 uppercase tracking-wider"
                     >
-                      <div>
-                        {date.getDate()}
-                      </div>
-                      {hasEvents && (
-                        <div className="absolute bottom-0.5 sm:bottom-1 left-1/2 -translate-x-1/2">
-                          <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-primary"></div>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {}
-              <div className="mt-4 sm:mt-6 flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded border-2 border-primary bg-primary/5" />
-                  <span>Hoy</span>
-                </div>
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded ring-2 ring-primary bg-primary/10" />
-                  <span>Seleccionado</span>
-                </div>
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-primary" />
-                  <span>Con eventos</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {}
-        <div className="w-full lg:w-96 flex-shrink-0 min-h-0">
-          <Card className="h-full flex flex-col">
-            <CardHeader className="flex-shrink-0">
-              <CardTitle className="text-lg">
-                {selectedDate ? (
-                  <>
-                    Eventos del día
-                    <p className="text-sm font-normal text-muted-foreground mt-1 capitalize">
-                      {formatSelectedDate(selectedDate)}
-                    </p>
-                  </>
-                ) : (
-                  "Selecciona un día"
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto">
-              {!selectedDate ? (
-                <div className="text-center py-8">
-                  <div className="mb-3 flex justify-center">
-                    <svg className="w-12 h-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Haz clic en un día del calendario para ver sus eventos
-                  </p>
-                </div>
-              ) : selectedEvents.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedEvents
-                    .sort((a, b) => (a.event_time || '').localeCompare(b.event_time || ''))
-                    .map((event) => (
-                    <Link key={event.id} href={`/eventos/${event.id}`}>
-                      <div className="relative pl-8 pb-4 group">
-                        {/* Timeline line */}
-                        <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-border group-last:hidden"></div>
-
-                        {/* Time dot */}
-                        <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-primary border-2 border-background shadow-sm"></div>
-
-                        {/* Time label */}
-                        <div className="text-xs font-semibold text-primary mb-2">{event.event_time}</div>
-
-                        {/* Event card */}
-                        <Card hoverable className="transition-all">
-                          <CardContent className="p-3">
-                            <div className="flex gap-3">
-                              <div className="p-2 rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                                <EventIcon category={event.category || ''} className="w-5 h-5" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-sm mb-1 line-clamp-1 group-hover:text-primary transition-colors">
-                                  {event.title}
-                                </h4>
-                                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                  <Badge variant="primary" className="text-xs">
-                                    {event.category}
-                                  </Badge>
-                                  <span className="text-xs font-semibold text-success">
-                                    {event.price_text || (event.is_free ? 'Gratis' : `S/ ${event.price_min || 0}`)}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  </svg>
-                                  <span className="line-clamp-1">{event.venue_name || event.district || 'Sin ubicación'}</span>
-                                </div>
-                                {event.event_time && (
-                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                    <span>{event.event_time}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </Link>
+                      {day}
+                    </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="mb-3 flex justify-center">
-                    <svg className="w-12 h-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    No hay eventos para este día
-                  </p>
+
+                {/* Días del mes - altura fija en móvil, flexible en desktop */}
+                <div className="grid grid-cols-7 grid-rows-6 gap-1 min-h-[280px] lg:flex-1">
+                  {calendarDays.map((date, index) => {
+                    if (!date) {
+                      return <div key={`empty-${index}`} />;
+                    }
+
+                    const dateKey = formatDateKey(date);
+                    const dayEvents = eventsByDate.get(dateKey) || [];
+                    const hasEvents = dayEvents.length > 0;
+                    const today = isToday(date);
+                    const selected = isSameDay(date, selectedDate);
+
+                    return (
+                      <button
+                        key={dateKey}
+                        onClick={() => handleDayClick(date)}
+                        className={`
+                          rounded-lg flex flex-col items-center justify-center relative transition-all
+                          text-sm font-medium min-h-[40px]
+                          ${today && !selected ? "bg-primary/10 text-primary font-bold" : ""}
+                          ${selected ? "bg-primary text-primary-foreground shadow-lg" : "hover:bg-muted"}
+                          ${!today && !selected ? "text-foreground" : ""}
+                        `}
+                      >
+                        <span className={selected ? "font-bold" : ""}>{date.getDate()}</span>
+                        {hasEvents && (
+                          <div className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${selected ? "bg-primary-foreground" : "bg-primary"}`} />
+                        )}
+                      </button>
+                    );
+                  })}
+                  {/* Rellenar celdas vacías para completar 6 filas (42 celdas) */}
+                  {Array.from({ length: 42 - calendarDays.length }).map((_, index) => (
+                    <div key={`padding-${index}`} />
+                  ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            </Card>
+          </div>
+
+          {/* Panel de eventos del día */}
+          <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 pb-4 lg:pb-0">
+            <Card className="lg:h-full flex flex-col">
+              <div className="p-4 border-b border-border flex-shrink-0">
+                <h3 className="font-bold text-foreground">Eventos del día</h3>
+                {selectedDate && (
+                  <p className="text-sm text-muted-foreground mt-0.5 capitalize">
+                    {formatSelectedDate(selectedDate)}
+                  </p>
+                )}
+              </div>
+              
+              <div className="flex-1 p-4 lg:overflow-y-auto">
+                {!selectedDate ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                      <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Selecciona un día para ver sus eventos
+                    </p>
+                  </div>
+                ) : selectedEvents.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedEvents
+                      .sort((a, b) => (a.event_time || '').localeCompare(b.event_time || ''))
+                      .map((event) => (
+                      <Link key={event.id} href={`/eventos/${event.id}`} className="block">
+                        <div className="p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all duration-200">
+                          <div className="flex gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                              <EventIcon category={event.category || ''} className="w-6 h-6" />
+                            </div>
+                            <div className="flex-1 min-w-0 space-y-2">
+                              <h4 className="font-semibold text-sm line-clamp-2 text-foreground leading-snug">
+                                {event.title}
+                              </h4>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge variant="primary" className="text-xs px-2 py-0.5">
+                                  {event.category}
+                                </Badge>
+                                <span className="text-xs font-semibold text-green-600 dark:text-green-400">
+                                  {event.is_free ? 'GRATIS' : (event.price_text || `S/ ${event.price_min || 0}${event.price_max ? ` a S/ ${event.price_max}` : ''}`)}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span className="line-clamp-1">{event.venue_name || event.district || 'Sin ubicación'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                      <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      No hay eventos programados
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
